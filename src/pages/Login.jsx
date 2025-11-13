@@ -86,13 +86,13 @@ const LoginPage = () => {
     setTimeout(() => {
       if (userData.role_id === 1) {
         // HR_Manager
-        navigate('/dashboard-hr');
+        navigate('/human-resources/dashboard');
       } else if (userData.role_id === 2) {
         // Employee
         navigate('/dashboard-employee'); // Assuming this route exists or will be created
       } else {
         // Unknown role, default to HR dashboard
-        navigate('/dashboard-hr');
+        navigate('/human-resources/dashboard');
       }
     }, 2000);
   };

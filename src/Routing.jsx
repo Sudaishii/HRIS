@@ -1,5 +1,4 @@
 import { createBrowserRouter, RouterProvider } from "react-router-dom";
-import { ThemeProvider } from "./Context/theme-provider";
 
 import Landing from "./pages/Landing";
 import Login from "./pages/Login";
@@ -7,6 +6,11 @@ import Register from "./pages/Register";
 import DashboardEmployee from "./pages/DashboardEmployee";
 import PageHR from "./pages/PageHR";
 import { DashboardHR } from "./components/Dashboard/DashboardHR";
+import EmployeeManagement from "./components/EmployeeManagement/EmployeeManagement";
+import DailyTimeRecords from "./components/DailyTimeRecords/DailyTimeRecords";
+import LeaveRequests from "./components/LeaveRequests/LeaveRequests";
+import PayrollProcessing from "./components/PayrollProcessing/PayrollProcessing";
+import AccountSettings from "./components/AccountSettings/AccountSettings";
 
 import ProtectedRoute from "./components/ProtectedRoute";
 import PublicRoute from "./components/PublicRoute";
@@ -37,7 +41,7 @@ function App() {
     },
     // HR Layout (parent route)
     {
-      path: "/human-resources/dashboard",
+      path: "/human-resources",
       element: (
         <ProtectedRoute allowedRoles={[1]}>
           <PageHR />
@@ -45,28 +49,32 @@ function App() {
       ),
       children: [
         {
-          index: true, // default child
+          index: true, // default child - redirect to dashboard
+          element: <DashboardHR />,
+        },
+        {
+          path: "dashboard",
           element: <DashboardHR />,
         },
         {
           path: "employee-management",
-          element: <h1 className="title">Employee Management</h1>,
+          element: <EmployeeManagement />,
         },
         {
           path: "time-keeping",
-          element: <h1 className="title">Daily Time Records</h1>,
+          element: <DailyTimeRecords />,
         },
         {
           path: "leave-requests",
-          element: <h1 className="title">Leave Requests</h1>,
+          element: <LeaveRequests />,
         },
         {
           path: "payroll-processing",
-          element: <h1 className="title">Payroll Processing</h1>,
+          element: <PayrollProcessing />,
         },
         {
           path: "account-settings",
-          element: <h1 className="title">Account Settings</h1>,
+          element: <AccountSettings />,
         },
       ],
     },
@@ -81,11 +89,7 @@ function App() {
     },
   ]);
 
-  return (
-    <ThemeProvider storageKey="theme">
-      <RouterProvider router={router} />
-    </ThemeProvider>
-  );
+  return <RouterProvider router={router} />;
 }
 
 export default App;

@@ -1,4 +1,4 @@
-import { Home, Users, Clock, Calendar, DollarSign } from 'lucide-react';
+import { Home, Users, Clock, Calendar, DollarSign, Settings } from 'lucide-react';
 
 export const navbarLink = [
   {
@@ -7,7 +7,7 @@ export const navbarLink = [
       {
         label: "Dashboard",
         icon: Home,
-        path: "/human-resources",
+        path: "/human-resources/dashboard",
       },
     ],
   },
@@ -17,7 +17,7 @@ export const navbarLink = [
       {
         label: "Employee Management",
         icon: Users,
-        path: "employee-management",
+        path: "/human-resources/employee-management",
       },
     ],
   },
@@ -27,12 +27,12 @@ export const navbarLink = [
       {
         label: "Daily Time Records",
         icon: Clock,
-        path: "/time-keeping",
+        path: "/human-resources/time-keeping",
       },
       {
         label: "Leave Requests",
         icon: Calendar,
-        path: "/leave-requests",
+        path: "/human-resources/leave-requests",
       },
     ],
   },
@@ -51,8 +51,8 @@ export const navbarLink = [
     links: [
       {
         label: "Account Settings",
-        icon: Users,
-        path: "/account-settings",
+        icon: Settings,
+        path: "/human-resources/account-settings",
       },
     ],
   },

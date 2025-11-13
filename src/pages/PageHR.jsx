@@ -35,21 +35,21 @@ const PageHR = () => {
       {/* Sidebar */}
       <Sidebar ref={sidebarRef} collapsed={collapsed} />
 
-      {/* Main content wrapper */}
-      <div
+      {/* Header */}
+      <Header collapsed={collapsed} setCollapsed={setCollapsed} />
+
+      {/* Main content - positioned at intersection of sidebar and header */}
+      <main
         className={Cn(
-          "transition-all duration-300 flex-1",
-          collapsed ? "md:ml-[70px] ml-0" : "md:ml-[250px] ml-0"
+          "fixed transition-all duration-300 top-16 z-30 overflow-y-auto overflow-x-hidden p-6",
+          collapsed 
+            ? "md:left-[70px] md:w-[calc(100%-70px)] left-0 w-full" 
+            : "md:left-[250px] md:w-[calc(100%-250px)] left-0 w-full",
+          "h-[calc(100vh-4rem)]"
         )}
       >
-        {/* Header */}
-        <Header collapsed={collapsed} setCollapsed={setCollapsed} />
-
-        {/* Page content */}
-        <div className="h-[calc(100vh-60px)] overflow-y-auto overflow-x-hidden p-6">
-          <Outlet />
-        </div>
-      </div>
+        <Outlet />
+      </main>
     </div>
   );
 };
