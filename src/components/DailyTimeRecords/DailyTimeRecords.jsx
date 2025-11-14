@@ -40,7 +40,6 @@ const DailyTimeRecords = () => {
       setValidEmployeeIds(employeeIdSet);
       return employeeIdSet;
     } catch (error) {
-      console.error("Error fetching employee IDs:", error);
       showToast("Failed to fetch employee list", "error");
       return new Set();
     }
@@ -66,7 +65,6 @@ const DailyTimeRecords = () => {
       if (error) throw error;
       setRecords(data || []);
     } catch (error) {
-      console.error("Error fetching records:", error);
       showToast("Failed to fetch records", "error");
     } finally {
       setLoading(false);
@@ -89,7 +87,6 @@ const DailyTimeRecords = () => {
           table: "daily_time_record",
         },
         (payload) => {
-          console.log("DTR table changed:", payload);
           fetchRecords();
         }
       )
@@ -385,7 +382,6 @@ const DailyTimeRecords = () => {
           .limit(1);
 
         if (error) {
-          console.error("Duplicate check error:", error);
           return { record, isDuplicate: false, error: error.message };
         }
 
@@ -439,7 +435,6 @@ const DailyTimeRecords = () => {
             .insert(batch);
 
           if (error) {
-            console.error("Batch insert error:", error);
             failed += batch.length;
             failedRecords.push(...batch.map((r, idx) => ({
               row: transformed.findIndex(tr => 
@@ -454,7 +449,6 @@ const DailyTimeRecords = () => {
             imported += batch.length;
           }
         } catch (error) {
-          console.error("Batch insert exception:", error);
           failed += batch.length;
         }
 
@@ -500,7 +494,6 @@ const DailyTimeRecords = () => {
         showToast(`${failed} records failed to import`, "error");
       }
     } catch (error) {
-      console.error("Import error:", error);
       showToast("Failed to import CSV file", "error");
     } finally {
       setIsImporting(false);
@@ -776,17 +769,6 @@ const DailyTimeRecords = () => {
                     </>
                   )}
                 </label>
-              </div>
-
-              {/* CSV Format Info */}
-              <div className="daily-time-records-format-info">
-                <p className="daily-time-records-format-info-title">Expected CSV Format:</p>
-                <code className="daily-time-records-format-info-code">
-                  employee_id,entry_date,time_in,time_out,month,hours_worked,overtime_hrs,absent
-                </code>
-                <p className="daily-time-records-format-info-example">
-                  Example: 1001,8/1/2024,8:00,17:00,AUGUST,8,0,No
-                </p>
               </div>
 
               {/* Progress Bar */}

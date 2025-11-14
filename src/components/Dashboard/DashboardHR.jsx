@@ -1,39 +1,130 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import * as Avatar from "@radix-ui/react-avatar";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
+import { Users, Calendar, Clock, DollarSign } from "lucide-react";
+import { supabase } from "../../services/supabase-client";
 
 export const DashboardHR = () => {
-  const team = [
-    { name: "Emmeline Labrie", email: "emmeline.labrie@example.com" },
-    { name: "Zac Wight", email: "zac.wight@example.com" },
-    { name: "Poppy Nicholls", email: "poppy.nicholls@example.com" },
-    { name: "Da-Xia Wu", email: "da-xia.wu@example.com" },
-    { name: "Marisa Palermo", email: "marisa.palermo@example.com" },
-  ];
+  const [kpiData, setKpiData] = useState({
+    totalEmployees: 0,
+    activeLeaves: 0,
+    pendingRequests: 0,
+    totalPayroll: 0,
+  });
+  const [loading, setLoading] = useState(true);
+  const [team, setTeam] = useState([]);
+
+  useEffect(() => {
+    fetchKPIData();
+    fetchRecentEmployees();
+  }, []);
+
+  const fetchKPIData = async () => {
+    try {
+      setLoading(true);
+      
+      // Fetch total employees
+      const { count: employeeCount } = await supabase
+        .from("employee")
+        .select("*", { count: "exact", head: true });
+
+      // Fetch active leaves (approved leave requests that are currently active)
+      const today = new Date().toISOString().split("T")[0];
+      const { data: activeLeavesData } = await supabase
+        .from("leavereq_table")
+        .select("leave_des, leave_status")
+        .eq("leave_status", "Approved");
+      
+      // Parse leave descriptions to check if dates are active
+      let activeLeavesCount = 0;
+      if (activeLeavesData) {
+        activeLeavesCount = activeLeavesData.filter((leave) => {
+          const desc = leave.leave_des || "";
+          const startMatch = desc.match(/Start Date: ([^,]+)/);
+          const endMatch = desc.match(/End Date: ([^.]+)/);
+          if (startMatch && endMatch) {
+            const startDate = new Date(startMatch[1].trim());
+            const endDate = new Date(endMatch[1].trim());
+            const todayDate = new Date(today);
+            return startDate <= todayDate && endDate >= todayDate;
+          }
+          return false;
+        }).length;
+      }
+
+      // Fetch pending requests
+      const { count: pendingCount } = await supabase
+        .from("leavereq_table")
+        .select("*", { count: "exact", head: true })
+        .eq("leave_status", "Pending");
+
+      // Fetch total payroll (sum of net_pay from payslip_reports)
+      const { data: payrollData } = await supabase
+        .from("payslip_reports")
+        .select("net_pay");
+
+      const totalPayroll = payrollData?.reduce((sum, report) => {
+        return sum + (parseFloat(report.net_pay) || 0);
+      }, 0) || 0;
+
+      setKpiData({
+        totalEmployees: employeeCount || 0,
+        activeLeaves: activeLeavesCount || 0,
+        pendingRequests: pendingCount || 0,
+        totalPayroll: totalPayroll,
+      });
+    } catch (error) {
+      // Error fetching KPI data
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchRecentEmployees = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("employee")
+        .select("emp_fname, emp_middle, emp_lname, emp_email")
+        .order("created_at", { ascending: false })
+        .limit(5);
+
+      if (error) throw error;
+      
+      const formattedTeam = (data || []).map(emp => ({
+        name: `${emp.emp_fname || ""} ${emp.emp_middle || ""} ${emp.emp_lname || ""}`.trim(),
+        email: emp.emp_email || "No email",
+      }));
+      
+      setTeam(formattedTeam);
+    } catch (error) {
+      // Error fetching employees
+    }
+  };
+
 
   const containerStyle = {
     position: "relative",
     width: "100%",
-    maxWidth: "720px",
-    margin: "40px auto 24px",
-    padding: "clamp(16px, 4vw, 24px)",
     backgroundColor: "#1f1f2b",
     color: "#f5f5f5",
-    borderRadius: "8px",
+    borderRadius: "12px",
+    padding: "clamp(16px, 4vw, 24px)",
     fontFamily: "system-ui, sans-serif",
+    boxShadow: "0 4px 10px rgba(0,0,0,0.3)",
+  };
+
+  const dashboardContainer = {
+    width: "100%",
+    maxWidth: "1300px",
+    margin: "40px auto 24px",
+    padding: "0 clamp(16px, 4vw, 24px)",
   };
 
 const cardWrapper = {
   display: "grid",
-  marginTop: "40px",
   gridTemplateColumns: "repeat(auto-fit, minmax(min(260px, 100%), 1fr))",
   gap: "clamp(16px, 3vw, 20px)",
   marginBottom: "24px",
-  width: "100%",
-  maxWidth: "1300px",
-  marginLeft: "auto",
-  marginRight: "auto",
-  padding: "0 clamp(16px, 4vw, 24px)",
 };
 
 // 👇 Bigger card style
@@ -133,14 +224,100 @@ const cardStyle = {
     padding: "4px",
   };
 
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat("en-PH", {
+      style: "currency",
+      currency: "PHP",
+      minimumFractionDigits: 2,
+    }).format(amount);
+  };
+
+  const kpiCards = [
+    {
+      title: "Total Employees",
+      value: loading ? "..." : kpiData.totalEmployees.toString(),
+      icon: Users,
+      color: "#3b82f6",
+    },
+    {
+      title: "Active Leaves",
+      value: loading ? "..." : kpiData.activeLeaves.toString(),
+      icon: Calendar,
+      color: "#10b981",
+    },
+    {
+      title: "Pending Requests",
+      value: loading ? "..." : kpiData.pendingRequests.toString(),
+      icon: Clock,
+      color: "#f59e0b",
+    },
+    {
+      title: "Total Payroll",
+      value: loading ? "..." : formatCurrency(kpiData.totalPayroll),
+      icon: DollarSign,
+      color: "#8b5cf6",
+    },
+  ];
+
   return (
-    <>
+    <div style={dashboardContainer}>
       {/* KPI Cards Section */}
       <div style={cardWrapper}>
-        <div style={cardStyle}></div>
-        <div style={cardStyle}></div>
-        <div style={cardStyle}></div>
-        <div style={cardStyle}></div>
+        {kpiCards.map((card, index) => {
+          const Icon = card.icon;
+          return (
+            <div
+              key={index}
+              style={{
+                ...cardStyle,
+                borderLeft: `4px solid ${card.color}`,
+              }}
+              onMouseEnter={(e) => {
+                e.currentTarget.style.transform = "translateY(-4px)";
+                e.currentTarget.style.boxShadow = "0 6px 20px rgba(0,0,0,0.4)";
+              }}
+              onMouseLeave={(e) => {
+                e.currentTarget.style.transform = "translateY(0)";
+                e.currentTarget.style.boxShadow = "0 4px 10px rgba(0,0,0,0.3)";
+              }}
+            >
+              <div style={{ display: "flex", alignItems: "center", gap: "12px", marginBottom: "12px" }}>
+                <div
+                  style={{
+                    backgroundColor: card.color,
+                    borderRadius: "8px",
+                    padding: "10px",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  <Icon size={24} color="white" />
+                </div>
+                <h3
+                  style={{
+                    fontSize: "clamp(14px, 2vw, 16px)",
+                    color: "#aaa",
+                    fontWeight: 500,
+                    margin: 0,
+                  }}
+                >
+                  {card.title}
+                </h3>
+              </div>
+              <p
+                style={{
+                  fontSize: "clamp(24px, 4vw, 32px)",
+                  fontWeight: 700,
+                  color: "#f5f5f5",
+                  margin: 0,
+                }}
+              >
+                {card.value}
+              </p>
+            </div>
+          );
+        })}
       </div>
 
       {/* Employees Section */}
@@ -237,7 +414,7 @@ const cardStyle = {
           </div>
         ))}
       </div>
-    </>
+    </div>
   );
 };
 

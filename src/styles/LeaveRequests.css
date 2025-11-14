@@ -79,6 +79,10 @@
   color: #0f172a;
 }
 
+.dark .leave-requests-meta-value {
+  color: #f8fafc;
+}
+
 .leave-requests-filter-bar {
   background: white;
   border-radius: 0.75rem;
@@ -109,10 +113,29 @@
   color: #0f172a;
 }
 
+.dark .leave-requests-search input {
+  background: #334155;
+  border-color: #475569;
+  color: #f8fafc;
+}
+
 .leave-requests-search input:focus {
   outline: none;
   border-color: #3b82f6;
   box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+}
+
+.dark .leave-requests-search input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+}
+
+.leave-requests-search input::placeholder {
+  color: #94a3b8;
+}
+
+.dark .leave-requests-search input::placeholder {
+  color: #64748b;
 }
 
 .leave-requests-search-icon {
@@ -135,11 +158,20 @@
   background: #f8fafc;
 }
 
+.dark .leave-requests-status-filter {
+  background: #334155;
+  border-color: #475569;
+}
+
 .leave-requests-status-filter select {
   border: none;
   background: transparent;
   font-size: 0.875rem;
   color: #0f172a;
+}
+
+.dark .leave-requests-status-filter select {
+  color: #f8fafc;
 }
 
 .leave-requests-status-filter select:focus {
@@ -181,11 +213,32 @@
   background: #f8fafc;
 }
 
+.dark .leave-requests-table th {
+  background: #0f172a;
+  border-bottom: 1px solid #334155;
+  color: #94a3b8;
+}
+
 .leave-requests-table td {
   padding: 0.75rem 1rem;
   border-bottom: 1px solid #e2e8f0;
   font-size: 0.875rem;
   color: #0f172a;
+  background: white;
+}
+
+.dark .leave-requests-table td {
+  background: #1e293b;
+  border-bottom: 1px solid #334155;
+  color: #f8fafc;
+}
+
+.leave-requests-table tbody tr:hover td {
+  background: #f1f5f9;
+}
+
+.dark .leave-requests-table tbody tr:hover td {
+  background: #334155;
 }
 
 .leave-requests-employee-cell {
@@ -199,9 +252,17 @@
   color: #0f172a;
 }
 
+.dark .leave-requests-employee-name {
+  color: #f8fafc;
+}
+
 .leave-requests-employee-id {
   font-size: 0.75rem;
   color: #94a3b8;
+}
+
+.dark .leave-requests-employee-id {
+  color: #64748b;
 }
 
 .leave-status-badge {

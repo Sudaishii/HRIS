@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from "react";
-import { Search, Plus, Edit, Trash2, X, Upload, MoreHorizontal } from "lucide-react";
+import { Search, Plus, Edit, Trash2, X, Upload, MoreHorizontal, Eye } from "lucide-react";
 import * as Dialog from "@radix-ui/react-dialog";
 import * as Avatar from "@radix-ui/react-avatar";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import { Label } from "@radix-ui/react-label";
 import { supabase } from "../../services/supabase-client";
 import Toast from "../Toast";
+import { ViewEmployeeDetails } from "../ViewEmployeeDetails/ViewEmployeeDetails";
 import "../../styles/EmployeeManagement.css";
 
 // Department constants
@@ -73,7 +74,9 @@ const EmployeeManagement = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isViewDialogOpen, setIsViewDialogOpen] = useState(false);
   const [editingEmployee, setEditingEmployee] = useState(null);
+  const [viewingEmployee, setViewingEmployee] = useState(null);
   const [employeeToDelete, setEmployeeToDelete] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isToastOpen, setIsToastOpen] = useState(false);
@@ -126,7 +129,6 @@ const EmployeeManagement = () => {
           table: 'employee'
         },
         (payload) => {
-          console.log('Employee table changed:', payload);
           // Refetch employees when any change occurs
           fetchEmployees();
         }
@@ -498,7 +500,6 @@ const EmployeeManagement = () => {
       setIsDialogOpen(false);
       fetchEmployees();
     } catch (error) {
-      console.error("Error saving employee:", error);
       if (error.code === "23505") {
         showToast("Email already exists", "error");
       } else {
@@ -524,8 +525,6 @@ const EmployeeManagement = () => {
     
     // Get department from database - ensure it matches one of the DEPARTMENTS options
     let department = employee.emp_dept || "";
-    console.log("Employee department from DB:", department);
-    console.log("Available departments:", DEPARTMENTS);
     
     // Map common department variations to standard format
     const departmentMapping = {
@@ -556,10 +555,8 @@ const EmployeeManagement = () => {
         department.toLowerCase().includes(dept.toLowerCase())
       );
       if (matchedDept) {
-        console.log("Matched department:", department, "->", matchedDept);
         department = matchedDept;
       } else {
-        console.warn("Could not match department:", department, "- using as-is");
         // If no match found, use the value from database as-is
         // This ensures the field is not empty
       }
@@ -570,15 +567,9 @@ const EmployeeManagement = () => {
     if (employee.emp_position !== null && employee.emp_position !== undefined) {
       positionId = employee.emp_position.toString();
     }
-    console.log("Employee position ID from DB:", positionId);
-    console.log("Employee position name:", employee.position_table?.emp_position);
-    console.log("Available positions:", positions.map(p => ({ id: p.pos_id, name: p.emp_position })));
     
     // Verify position exists in our positions array
     const positionExists = positions.some(p => p.pos_id === parseInt(positionId));
-    if (positionId && !positionExists) {
-      console.warn("Position ID", positionId, "not found in positions array");
-    }
     
     // Use the actual values from database - preserve department and position
     // Set form data in a way that ensures both values are set together
@@ -599,9 +590,7 @@ const EmployeeManagement = () => {
       profile_picture: employee.profile_picture || "",
     };
     
-    console.log("Form data to set:", formDataToSet);
     setFormData(formDataToSet);
-    console.log("Form data set - Department:", formDataToSet.emp_dept, "Position:", formDataToSet.emp_position);
     setProfilePreview(employee.profile_picture || null);
     setFormErrors({});
     setIsDialogOpen(true);
@@ -628,7 +617,6 @@ const EmployeeManagement = () => {
       setEmployeeToDelete(null);
       fetchEmployees();
     } catch (error) {
-      console.error("Error deleting employee:", error);
       showToast("Failed to delete employee", "error");
     }
   };
@@ -797,6 +785,17 @@ const EmployeeManagement = () => {
                                 sideOffset={5}
                                 align="end"
                               >
+                                <DropdownMenu.Item
+                                  className="employee-action-menu-item"
+                                  onSelect={() => {
+                                    setViewingEmployee(employee);
+                                    setIsViewDialogOpen(true);
+                                  }}
+                                >
+                                  <Eye className="employee-action-menu-item-icon" />
+                                  View Employee
+                                </DropdownMenu.Item>
+                                <DropdownMenu.Separator className="employee-action-menu-separator" />
                                 <DropdownMenu.Item
                                   className="employee-action-menu-item"
                                   onSelect={() => handleEdit(employee)}
@@ -1304,6 +1303,16 @@ const EmployeeManagement = () => {
           </Dialog.Content>
         </Dialog.Portal>
       </Dialog.Root>
+
+      {/* View Employee Dialog */}
+      <ViewEmployeeDetails
+        employee={viewingEmployee}
+        isOpen={isViewDialogOpen}
+        onClose={() => {
+          setIsViewDialogOpen(false);
+          setViewingEmployee(null);
+        }}
+      />
 
       {/* Toast */}
       <Toast

@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { ChevronLeftIcon, SearchIcon, Sun, Moon, BellIcon, LogOut, AlertCircle } from "lucide-react";
 import PropTypes from "prop-types";
 import { Cn } from "../utils/cn.js";
@@ -6,12 +6,15 @@ import { useTheme } from "../assets/hooks/use-theme.jsx";
 import { useNavigate } from "react-router-dom";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
 import * as Dialog from "@radix-ui/react-dialog";
+import * as Avatar from "@radix-ui/react-avatar";
+import { supabase } from "../services/supabase-client";
 
 export const Header = ({ collapsed, setCollapsed }) => {
   
   const {theme, effectiveTheme, setTheme} = useTheme();
   const navigate = useNavigate();
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
+  const [employeeData, setEmployeeData] = useState(null);
 
   // Get user info from localStorage
   const getUserInfo = () => {
@@ -21,28 +24,71 @@ export const Header = ({ collapsed, setCollapsed }) => {
         return JSON.parse(userSession);
       }
     } catch (error) {
-      console.error('Error parsing user session:', error);
+      // Error parsing user session
     }
     return null;
   };
 
   const user = getUserInfo();
 
+  // Fetch employee data if user has emp_id
+  useEffect(() => {
+    const fetchEmployeeData = async () => {
+      if (user && user.emp_id) {
+        try {
+          const { data, error } = await supabase
+            .from("employee")
+            .select("emp_fname, emp_middle, emp_lname, profile_picture")
+            .eq("emp_id", user.emp_id)
+            .single();
+
+          if (error) throw error;
+          setEmployeeData(data);
+        } catch (error) {
+          // Error fetching employee data
+        }
+      } else {
+        setEmployeeData(null);
+      }
+    };
+
+    fetchEmployeeData();
+
+    // Listen for storage changes to update when emp_id is bound
+    const handleStorageChange = () => {
+      const updatedUser = getUserInfo();
+      if (updatedUser && updatedUser.emp_id) {
+        fetchEmployeeData();
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    
+    // Also check periodically for local changes (since storage event doesn't fire for same tab)
+    const interval = setInterval(() => {
+      const updatedUser = getUserInfo();
+      if (updatedUser?.emp_id !== user?.emp_id) {
+        fetchEmployeeData();
+      }
+    }, 1000);
+
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      clearInterval(interval);
+    };
+  }, [user]);
+
   const toggleTheme = (e) => {
     e.preventDefault();
     e.stopPropagation();
     
-    console.log("Theme toggle clicked", { theme, effectiveTheme });
-    
     // If theme is "system", switch to the opposite of current effective theme
     if (theme === "system") {
       const newTheme = effectiveTheme === "light" ? "dark" : "light";
-      console.log("Setting theme from system to:", newTheme);
       setTheme(newTheme);
     } else {
       // Toggle between light and dark
       const newTheme = theme === "light" ? "dark" : "light";
-      console.log("Toggling theme to:", newTheme);
       setTheme(newTheme);
     }
   };
@@ -110,11 +156,18 @@ export const Header = ({ collapsed, setCollapsed }) => {
               className="size-10 overflow-hidden rounded-full cursor-pointer hover:ring-2 hover:ring-blue-500 transition-all focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2"
               aria-label="User menu"
             >
-              <img
-                src="https://i.pravatar.cc/300"
-                alt="User Avatar"
-                className="size-full object-cover"
-              />
+              <Avatar.Root className="size-full">
+                <Avatar.Image
+                  src={employeeData?.profile_picture || ""}
+                  alt={employeeData ? `${employeeData.emp_fname} ${employeeData.emp_lname}` : "User Avatar"}
+                  className="size-full object-cover"
+                />
+                <Avatar.Fallback className="size-full bg-slate-300 dark:bg-slate-600 flex items-center justify-center text-slate-700 dark:text-slate-200 font-semibold text-sm">
+                  {employeeData 
+                    ? `${employeeData.emp_fname?.[0] || ""}${employeeData.emp_lname?.[0] || ""}`.toUpperCase()
+                    : user?.user_email?.[0]?.toUpperCase() || "U"}
+                </Avatar.Fallback>
+              </Avatar.Root>
             </button>
           </DropdownMenu.Trigger>
 
@@ -134,10 +187,17 @@ export const Header = ({ collapsed, setCollapsed }) => {
               {user && (
                 <div style={{ padding: '12px 16px', borderBottom: '1px solid rgb(226 232 240)', marginBottom: '8px' }} className="dark:border-slate-700">
                   <p className="text-sm font-medium text-slate-900 dark:text-slate-50">
-                    {user.user_email || 'User'}
+                    {employeeData 
+                      ? `${employeeData.emp_fname || ""} ${employeeData.emp_middle || ""} ${employeeData.emp_lname || ""}`.trim() || 'User'
+                      : user.user_email || 'User'}
                   </p>
                   <p className="text-xs text-slate-500 dark:text-slate-400" style={{ marginTop: '4px' }}>
                     {user.role_id === 1 ? 'HR Manager' : 'Employee'}
+                    {employeeData && (
+                      <span className="block mt-1 text-slate-400 dark:text-slate-500">
+                        {user.user_email}
+                      </span>
+                    )}
                   </p>
                 </div>
               )}

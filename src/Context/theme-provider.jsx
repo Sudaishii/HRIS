@@ -33,8 +33,6 @@ export function ThemeProvider({ children, defaultTheme = "light", storageKey = "
     // Apply the effective theme immediately
     const themeToApply = getEffectiveTheme(currentTheme);
     root.classList.add(themeToApply);
-    
-    console.log("Theme applied:", { currentTheme, effectiveTheme, themeToApply });
 
     // Listen for system theme changes when theme is set to "system"
     if (currentTheme === "system") {
@@ -43,7 +41,6 @@ export function ThemeProvider({ children, defaultTheme = "light", storageKey = "
         root.classList.remove("light", "dark");
         const newEffectiveTheme = getEffectiveTheme("system");
         root.classList.add(newEffectiveTheme);
-        console.log("System theme changed to:", newEffectiveTheme);
       };
 
       mediaQuery.addEventListener("change", handleChange);
@@ -54,10 +51,8 @@ export function ThemeProvider({ children, defaultTheme = "light", storageKey = "
   const value = useMemo(() => ({
     theme: currentTheme,
     setTheme: (theme) => {
-      console.log("setTheme called with:", theme);
       if (typeof window !== "undefined") {
         localStorage.setItem(storageKey, theme);
-        console.log("Theme saved to localStorage:", theme);
       }
       setCurrentTheme(theme);
     },

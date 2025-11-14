@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Search, Loader2, UserCheck, UserX, Filter } from "lucide-react";
+import { Search, UserCheck, UserX, Filter } from "lucide-react";
 import { supabase } from "../../services/supabase-client";
 import Toast from "../Toast";
 import "../../styles/LeaveRequests.css";
@@ -19,21 +19,34 @@ const LeaveRequests = () => {
     setTimeout(() => setToast({ show: false, message: "", type: "" }), 3000);
   };
 
+  const parseLeaveDescription = (description) => {
+    if (!description) return { startDate: "", endDate: "", reason: "" };
+    
+    const startMatch = description.match(/Start Date: ([^,]+)/);
+    const endMatch = description.match(/End Date: ([^.]+)/);
+    const reasonMatch = description.match(/Reason: (.+)/);
+    
+    return {
+      startDate: startMatch ? startMatch[1].trim() : "",
+      endDate: endMatch ? endMatch[1].trim() : "",
+      reason: reasonMatch ? reasonMatch[1].trim() : description,
+    };
+  };
+
   const fetchLeaveRequests = async () => {
     try {
       setLoading(true);
       const { data, error } = await supabase
-        .from("leave_requests")
+        .from("leavereq_table")
         .select(
           `
-            request_id,
+            leave_id,
             employee_id,
             leave_type,
-            start_date,
-            end_date,
-            reason,
-            status,
+            leave_des,
+            leave_status,
             created_at,
+            updated_at,
             employee:employee_id (
               emp_id,
               emp_fname,
@@ -46,9 +59,24 @@ const LeaveRequests = () => {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setLeaveRequests(data || []);
+      
+      // Parse the leave_des field and map to expected format
+      const parsedData = (data || []).map((request) => {
+        const parsed = parseLeaveDescription(request.leave_des);
+        return {
+          ...request,
+          request_id: request.leave_id,
+          start_date: parsed.startDate,
+          end_date: parsed.endDate,
+          reason: parsed.reason,
+          status: request.leave_status,
+        };
+      });
+      
+      setLeaveRequests(parsedData);
     } catch (error) {
       console.error("Error fetching leave requests:", error);
+      showToast("Failed to fetch leave requests", "error");
     } finally {
       setLoading(false);
     }
@@ -61,7 +89,7 @@ const LeaveRequests = () => {
       .channel("leave-requests-changes")
       .on(
         "postgres_changes",
-        { event: "*", schema: "public", table: "leave_requests" },
+        { event: "*", schema: "public", table: "leavereq_table" },
         () => fetchLeaveRequests()
       )
       .subscribe();
@@ -75,15 +103,18 @@ const LeaveRequests = () => {
     try {
       setActionLoading(requestId);
       const { error } = await supabase
-        .from("leave_requests")
-        .update({ status: newStatus })
-        .eq("request_id", requestId);
+        .from("leavereq_table")
+        .update({ 
+          leave_status: newStatus,
+          updated_at: new Date().toISOString()
+        })
+        .eq("leave_id", requestId);
 
       if (error) throw error;
       showToast(`Request ${newStatus.toLowerCase()} successfully.`, "success");
       fetchLeaveRequests();
     } catch (error) {
-      console.error("Error updating status:", error);
+      console.error("Error updating leave request:", error);
       showToast("Failed to update leave request.", "error");
     } finally {
       setActionLoading(null);
@@ -193,7 +224,6 @@ const LeaveRequests = () => {
       <div className="leave-requests-table-wrapper">
         {loading ? (
           <div className="leave-requests-loading">
-            <Loader2 className="leave-requests-loading-icon" />
             <p>Loading leave requests...</p>
           </div>
         ) : filteredRequests.length === 0 ? (
@@ -254,12 +284,8 @@ const LeaveRequests = () => {
                             status.toLowerCase() === "approved"
                           }
                         >
-                          {actionLoading === request.request_id ? (
-                            <Loader2 className="leave-requests-action-icon spinning" />
-                          ) : (
-                            <UserCheck className="leave-requests-action-icon" />
-                          )}
-                          Approve
+                          <UserCheck className="leave-requests-action-icon" />
+                          {actionLoading === request.request_id ? "Processing..." : "Approve"}
                         </button>
                         <button
                           className="leave-requests-action-button decline"
@@ -271,12 +297,8 @@ const LeaveRequests = () => {
                             status.toLowerCase() === "declined"
                           }
                         >
-                          {actionLoading === request.request_id ? (
-                            <Loader2 className="leave-requests-action-icon spinning" />
-                          ) : (
-                            <UserX className="leave-requests-action-icon" />
-                          )}
-                          Decline
+                          <UserX className="leave-requests-action-icon" />
+                          {actionLoading === request.request_id ? "Processing..." : "Decline"}
                         </button>
                       </div>
                     </td>

@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
-import { Search, FileText, Loader2, X, CheckSquare, Square, Calendar, DollarSign } from "lucide-react";
+import { Search, FileText, Loader2, X, CheckSquare, Square, Calendar, DollarSign, Trash2 } from "lucide-react";
 import { supabase } from "../../services/supabase-client";
 import Toast from "../Toast";
+import * as Dialog from "@radix-ui/react-dialog";
 import "../../styles/PayrollProcessing.css";
 
 const POSITION_LOOKUP = {
@@ -34,6 +35,8 @@ const PayrollProcessing = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedReport, setSelectedReport] = useState(null);
   const [toast, setToast] = useState({ show: false, message: "", type: "" });
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [reportToDelete, setReportToDelete] = useState(null);
   
   // Payslip generation states
   const [employees, setEmployees] = useState([]);
@@ -73,7 +76,7 @@ const PayrollProcessing = () => {
           ),
           payslip_status:payslip_status_id (
             pay_status_id,
-            status_name:pay_name
+            pay_name
           )
         `)
         .order("year", { ascending: false })
@@ -81,9 +84,33 @@ const PayrollProcessing = () => {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setReports(data || []);
+      
+      // Map the status data correctly
+      const reportsWithStatus = (data || []).map(report => {
+        // If the join worked and we have pay_name, use it
+        if (report.payslip_status && report.payslip_status.pay_name) {
+          return {
+            ...report,
+            payslip_status: {
+              ...report.payslip_status,
+              status_name: report.payslip_status.pay_name
+            }
+          };
+        }
+        // If status is missing or join failed, default to PENDING (ID 1)
+        // This handles cases where foreign key isn't set up or status_id is null/1
+        const statusId = report.payslip_status_id || 1;
+        return {
+          ...report,
+          payslip_status: statusId === 1 
+            ? { pay_status_id: 1, status_name: "PENDING" }
+            : (report.payslip_status || { pay_status_id: 1, status_name: "PENDING" })
+        };
+      });
+      
+      setReports(reportsWithStatus);
     } catch (error) {
-      console.error("Error fetching payslip reports:", error);
+      console.error("Error fetching reports:", error);
       // We intentionally skip showing a toast here so empty states don't look like failures
     } finally {
       setLoading(false);
@@ -105,7 +132,6 @@ const PayrollProcessing = () => {
           table: "payslip_reports",
         },
         (payload) => {
-          console.log("Payslip reports table changed:", payload);
           fetchReports();
         }
       )
@@ -206,6 +232,40 @@ const PayrollProcessing = () => {
     setSelectedReport(report);
   };
 
+  // Handle delete payslip click
+  const handleDeleteClick = (e, report) => {
+    e.stopPropagation(); // Prevent row click from triggering
+    setReportToDelete(report);
+    setDeleteConfirmOpen(true);
+  };
+
+  // Handle delete confirmation
+  const handleDeleteConfirm = async () => {
+    if (!reportToDelete) return;
+
+    try {
+      const { error } = await supabase
+        .from("payslip_reports")
+        .delete()
+        .eq("report_id", reportToDelete.report_id);
+
+      if (error) throw error;
+
+      showToast("Payslip deleted successfully", "success");
+      // Refresh the reports list
+      fetchReports();
+      // Clear selection if deleted report was selected
+      if (selectedReport?.report_id === reportToDelete.report_id) {
+        setSelectedReport(null);
+      }
+      setDeleteConfirmOpen(false);
+      setReportToDelete(null);
+    } catch (error) {
+      console.error("Error deleting payslip:", error);
+      showToast("Failed to delete payslip", "error");
+    }
+  };
+
   // Fetch employees for payslip generation
   const fetchEmployees = async () => {
     try {
@@ -228,7 +288,6 @@ const PayrollProcessing = () => {
       if (error) throw error;
       setEmployees(data || []);
     } catch (error) {
-      console.error("Error fetching employees:", error);
       showToast("Failed to fetch employees", "error");
     }
   };
@@ -324,7 +383,8 @@ const PayrollProcessing = () => {
     const SSS_RATE = 0.05; // 5%
     const PHILHEALTH_RATE = 0.025; // 2.5%
     const PAGIBIG_FIXED = 200; // ₱200
-    const DEFAULT_STATUS_ID = 1; // Pending
+    // Default status ID is 1 (PENDING) from payslip_status table
+    const DEFAULT_STATUS_ID = 1;
 
     const monthNames = [
       "January", "February", "March", "April", "May", "June",
@@ -432,7 +492,6 @@ const PayrollProcessing = () => {
           generatedCount++;
 
         } catch (error) {
-          console.error(`Error processing employee ${empId}:`, error);
           summaryText += `Error: Employee ID ${empId} - ${error.message}\n`;
           errorCount++;
         }
@@ -454,7 +513,6 @@ const PayrollProcessing = () => {
       }
 
     } catch (error) {
-      console.error("Error generating payslips:", error);
       showToast("Error occurred while generating payslips", "error");
     } finally {
       setGenerating(false);
@@ -580,6 +638,7 @@ const PayrollProcessing = () => {
                     <col className="col-money" />
                     <col className="col-money" />
                     <col className="col-status" />
+                    <col className="col-actions" />
                   </colgroup>
                   <thead>
                     <tr>
@@ -590,6 +649,7 @@ const PayrollProcessing = () => {
                       <th className="numeric-column">Deductions</th>
                       <th className="numeric-column">Net Pay</th>
                       <th>Status</th>
+                      <th>Actions</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -633,6 +693,15 @@ const PayrollProcessing = () => {
                           <span className={`payroll-processing-status-badge ${getStatusBadgeClass(report.payslip_status?.status_name)}`}>
                             {report.payslip_status?.status_name || "Unknown"}
                           </span>
+                        </td>
+                        <td className="col-actions">
+                          <button
+                            className="payroll-processing-delete-button"
+                            onClick={(e) => handleDeleteClick(e, report)}
+                            title="Delete payslip"
+                          >
+                            <Trash2 className="payroll-processing-delete-icon" />
+                          </button>
                         </td>
                       </tr>
                     ))}
@@ -965,6 +1034,47 @@ const PayrollProcessing = () => {
           </div>
         )}
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <Dialog.Root open={deleteConfirmOpen} onOpenChange={setDeleteConfirmOpen}>
+        <Dialog.Portal>
+          <Dialog.Overlay className="payroll-processing-delete-dialog-overlay" />
+          <Dialog.Content className="payroll-processing-delete-dialog-content">
+            <Dialog.Title className="payroll-processing-delete-dialog-title">
+              Delete Payslip
+            </Dialog.Title>
+            <div className="payroll-processing-delete-dialog-body">
+              <p>
+                Are you sure you want to delete the payslip for{" "}
+                <strong>
+                  {reportToDelete && getEmployeeName(reportToDelete)} ({reportToDelete && formatMonthLabel(reportToDelete)})
+                </strong>
+                ?
+              </p>
+              <p className="payroll-processing-delete-dialog-warning">
+                This action cannot be undone.
+              </p>
+            </div>
+            <div className="payroll-processing-delete-dialog-actions">
+              <button
+                className="payroll-processing-delete-dialog-cancel"
+                onClick={() => {
+                  setDeleteConfirmOpen(false);
+                  setReportToDelete(null);
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                className="payroll-processing-delete-dialog-confirm"
+                onClick={handleDeleteConfirm}
+              >
+                Delete
+              </button>
+            </div>
+          </Dialog.Content>
+        </Dialog.Portal>
+      </Dialog.Root>
 
       {/* Toast Notification */}
       {toast.show && (

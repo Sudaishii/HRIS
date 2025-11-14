@@ -1,4 +1,4 @@
-import { Home, Users, Clock, Calendar, DollarSign, Settings } from 'lucide-react';
+import { Home, Users, Clock, Calendar, DollarSign, Settings, FileText } from 'lucide-react';
 
 export const navbarLink = [
   {
@@ -53,6 +53,54 @@ export const navbarLink = [
         label: "Account Settings",
         icon: Settings,
         path: "/human-resources/account-settings",
+      },
+    ],
+  },
+];
+
+export const employeeNavbarLink = [
+  {
+    title: "Overview",
+    links: [
+      {
+        label: "Dashboard",
+        icon: Home,
+        path: "/dashboard-employee",
+      },
+    ],
+  },
+  {
+    title: "Records",
+    links: [
+      {
+        label: "Payslip Records",
+        icon: FileText,
+        path: "/dashboard-employee/payslip-records",
+      },
+      {
+        label: "Daily Time Records",
+        icon: Clock,
+        path: "/dashboard-employee/daily-time-records",
+      },
+    ],
+  },
+  {
+    title: "Leave",
+    links: [
+      {
+        label: "Request Leave",
+        icon: Calendar,
+        path: "/dashboard-employee/request-leave",
+      },
+    ],
+  },
+  {
+    title: "Settings",
+    links: [
+      {
+        label: "Account Settings",
+        icon: Settings,
+        path: "/dashboard-employee/account-settings",
       },
     ],
   },
