@@ -9,8 +9,6 @@ import * as validation from '../utils/validation';
 import bcrypt from 'bcryptjs';
 import Toast from '../components/Toast';
 
-
-
 const RegisterPage = () => {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
@@ -27,12 +25,9 @@ const RegisterPage = () => {
 
   const hasErrors = Object.keys(errors).some(key => errors[key] && key !== 'general');
 
-   useEffect(() => {
+  useEffect(() => {
     document.title = 'Register - SugboWorks HRIS';
   }, []);
-
-  
-
 
   useEffect(() => {
     if (!email) {
@@ -72,20 +67,12 @@ const RegisterPage = () => {
     }
   }, [confirmPassword, password]);
 
-
-
-    
-
-
-
   const handleSubmit = async (e) => {
-
     e.preventDefault();
 
     setErrors({});
     setShakeFields({});
 
-    // Check for any existing errors (from async validations)
     const hasErrors = Object.keys(errors).some(key => errors[key] && key !== 'general');
     if (hasErrors) {
       const fieldsToShake = {};
@@ -98,8 +85,6 @@ const RegisterPage = () => {
       setTimeout(() => setShakeFields({}), 500);
       return;
     }
-
-
 
     const emailResult = validation.validateEmail(email);
     if (!emailResult.isValid) {
@@ -158,7 +143,6 @@ const RegisterPage = () => {
     setToastVariant('success');
     setIsToastOpen(true);
 
-    // Clear the form after successful registration
     setEmail('');
     setPassword('');
     setConfirmPassword('');
@@ -168,11 +152,9 @@ const RegisterPage = () => {
     setErrors({});
     setShakeFields({});
 
-    // Redirect to login page after a short delay
     setTimeout(() => {
       navigate('/login');
     }, 2000);
-
   };
 
   const handleToastClose = () => {
@@ -181,144 +163,140 @@ const RegisterPage = () => {
 
   return (
     <div className="register-page">
-      <div className="register-card">
-        <div className="register-form-container">
-          {/* Logo Section */}
-          <div className="register-logo-section">
-            <img src={logo} alt="SugboWorks Logo" className="register-logo" />
-            <h2 className="register-heading">Create Account</h2>
-            <p className="register-subheading">Sign up to get started</p>
+      <div className="register-container">
+        {/* Left Side - Form Section */}
+        <div className="register-form-section">
+          <div className="register-form-header">
+            <img src={logo} alt="SugboWorks Logo" className="register-form-logo" />
+            <span className="register-form-brand">SugboWorks</span>
           </div>
+          <div className="register-form-container">
+            <h2 className="register-heading">Create an account</h2>
+            <p className="register-subheading">
+              Already have an account? <Link to="/login" className="register-link">Log in</Link>
+            </p>
 
-          <form className="register-form" onSubmit={handleSubmit}>
-
-
-
-            <div className={`register-field ${shakeFields.email ? 'shake' : ''}`}>
-              <Label htmlFor="email" className="register-label">
-                Email address
-              </Label>
-              <input
-                id="email"
-                name="email"
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="register-input"
-                placeholder="Enter your email"
-              />
-              {errors.email && <p className="error-message">{errors.email}</p>}
-            </div>
-
-            <div className={`register-field ${shakeFields.password ? 'shake' : ''}`}>
-              <Label htmlFor="password" className="register-label">
-                Password
-              </Label>
-              <div className="password-input-container">
-                <input
-                  id="password"
-                  name="password"
-                  type={showPassword ? "text" : "password"}
-                  required
-                  value={password}
-                  onChange={(e) => {
-                    setPassword(e.target.value);
-                    if (e.target.value === '') {
-                      setErrors((prev) => ({ ...prev, password: null }));
-                    } else {
-                      const result = validation.validatePassword(e.target.value);
-                      setErrors((prev) => ({ ...prev, password: result.isValid ? null : result.error }));
-                    }
-                  }}
-                  className="register-input"
-                  placeholder="Enter your password"
-                />
-                <button
-                  type="button"
-                  className="password-toggle"
-                  onClick={() => setShowPassword(!showPassword)}
-                  aria-label={showPassword ? "Hide password" : "Show password"}
-                >
-                  {showPassword ? <EyeClosedIcon /> : <EyeOpenIcon />}
-                </button>
-              </div>
-              {errors.password && <p className="error-message">{errors.password}</p>}
-            </div>
-
-            <div className={`register-field ${shakeFields.confirmPassword ? 'shake' : ''}`}>
-              <Label htmlFor="confirm-password" className="register-label">
-                Confirm Password
-              </Label>
-              <div className="password-input-container">
-                <input
-                  id="confirm-password"
-                  name="confirm-password"
-                  type={showConfirmPassword ? "text" : "password"}
-                  required
-                  value={confirmPassword}
-                  onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="register-input"
-                  placeholder="Confirm your password"
-                />
-                <button
-                  type="button"
-                  className="password-toggle"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  aria-label={showConfirmPassword ? "Hide password" : "Show password"}
-                >
-                  {showConfirmPassword ? <EyeClosedIcon /> : <EyeOpenIcon />}
-                </button>
-              </div>
-              {errors.confirmPassword && <p className="error-message">{errors.confirmPassword}</p>}
-            </div>
-
-            <div className={`register-options ${shakeFields.agreeTerms ? 'shake' : ''}`}>
-              <div className="register-remember">
-                <input
-                  id="agree-terms"
-                  name="agree-terms"
-                  type="checkbox"
-                  required
-                  checked={agreeTerms}
-                  onChange={(e) => setAgreeTerms(e.target.checked)}
-                  className="register-checkbox"
-                />
-                <Label htmlFor="agree-terms" className="register-checkbox-label">
-                  I agree to the <a href="#" className="register-link">Terms and Conditions</a>
+            <form className="register-form" onSubmit={handleSubmit}>
+              <div className={`register-field ${shakeFields.email ? 'shake' : ''}`}>
+                <Label htmlFor="email" className="register-label">
+                  Email address
                 </Label>
+                <input
+                  id="email"
+                  name="email"
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="register-input"
+                  placeholder="Enter your email"
+                />
+                {errors.email && <p className="error-message">{errors.email}</p>}
               </div>
-              {errors.agreeTerms && <p className="error-message">{errors.agreeTerms}</p>}
-            </div>
 
+              <div className={`register-field ${shakeFields.password ? 'shake' : ''}`}>
+                <Label htmlFor="password" className="register-label">
+                  Password
+                </Label>
+                <div className="password-input-container">
+                  <input
+                    id="password"
+                    name="password"
+                    type={showPassword ? "text" : "password"}
+                    required
+                    value={password}
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      if (e.target.value === '') {
+                        setErrors((prev) => ({ ...prev, password: null }));
+                      } else {
+                        const result = validation.validatePassword(e.target.value);
+                        setErrors((prev) => ({ ...prev, password: result.isValid ? null : result.error }));
+                      }
+                    }}
+                    className="register-input"
+                    placeholder="Enter your password"
+                  />
+                  <button
+                    type="button"
+                    className="password-toggle"
+                    onClick={() => setShowPassword(!showPassword)}
+                    aria-label={showPassword ? "Hide password" : "Show password"}
+                  >
+                    {showPassword ? <EyeClosedIcon /> : <EyeOpenIcon />}
+                  </button>
+                </div>
+                {errors.password && <p className="error-message">{errors.password}</p>}
+              </div>
 
-            <div>
-              <button
-                type="submit"
-                className="register-button"
-                disabled={hasErrors}
-              >
-                Sign up
-              </button>
-              {errors.general && <p className="error-message">{errors.general}</p>}
-            </div>
+              <div className={`register-field ${shakeFields.confirmPassword ? 'shake' : ''}`}>
+                <Label htmlFor="confirm-password" className="register-label">
+                  Confirm Password
+                </Label>
+                <div className="password-input-container">
+                  <input
+                    id="confirm-password"
+                    name="confirm-password"
+                    type={showConfirmPassword ? "text" : "password"}
+                    required
+                    value={confirmPassword}
+                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    className="register-input"
+                    placeholder="Confirm your password"
+                  />
+                  <button
+                    type="button"
+                    className="password-toggle"
+                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                    aria-label={showConfirmPassword ? "Hide password" : "Show password"}
+                  >
+                    {showConfirmPassword ? <EyeClosedIcon /> : <EyeOpenIcon />}
+                  </button>
+                </div>
+                {errors.confirmPassword && <p className="error-message">{errors.confirmPassword}</p>}
+              </div>
 
-            <div className="register-signin">
-              <p className="register-signin-text">
-                Already have an account?{' '}
-                <Link to="/login" className="register-link">
-                  Sign in
-                </Link>
-              </p>
-            </div>
+              <div className={`register-options ${shakeFields.agreeTerms ? 'shake' : ''}`}>
+                <div className="register-remember">
+                  <input
+                    id="agree-terms"
+                    name="agree-terms"
+                    type="checkbox"
+                    required
+                    checked={agreeTerms}
+                    onChange={(e) => setAgreeTerms(e.target.checked)}
+                    className="register-checkbox"
+                  />
+                  <Label htmlFor="agree-terms" className="register-checkbox-label">
+                    I agree to the <a href="#" className="register-link">Terms and Conditions</a>
+                  </Label>
+                </div>
+                {errors.agreeTerms && <p className="error-message">{errors.agreeTerms}</p>}
+              </div>
 
-   
-            <div className="register-back-home">
-              <Link to="/" className="register-link">
-                Back to Home
-              </Link>
-            </div>
-          </form>
+              <div>
+                <button
+                  type="submit"
+                  className="register-button"
+                  disabled={hasErrors}
+                >
+                  Sign up
+                </button>
+                {errors.general && <p className="error-message">{errors.general}</p>}
+              </div>
+            </form>
+          </div>
+        </div>
+
+        {/* Right Side - Image Section */}
+        <div className="register-image-section">
+          <Link to="/" className="register-back-button">
+            Back to website →
+          </Link>
+          <div className="register-image-wrapper">
+            <img src="/assets/image2.jpg" alt="HRIS Platform" className="register-hero-image" />
+          </div>
+         
         </div>
       </div>
 

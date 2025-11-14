@@ -13,6 +13,7 @@ const Toast = ({ isOpen, onClose, message, variant = 'success' }) => {
         open={isOpen}
         onOpenChange={onClose}
         className={`toast ${isSuccess ? 'success' : 'error'}`}
+        style={{ zIndex: 99999 }}
       >
         <div className="toast-content">
           <Icon className={`toast-icon ${isSuccess ? 'success' : 'error'}`} />

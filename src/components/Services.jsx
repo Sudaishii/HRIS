@@ -43,7 +43,9 @@ const Services = () => {
         <div className="services-grid" role="list">
           {services.map((service, index) => (
             <article key={index} className="service-card" role="listitem">
-              <service.icon size={48} className="service-icon" aria-hidden="true" />
+              <div className="service-icon-wrapper">
+                <service.icon size={32} className="service-icon" aria-hidden="true" />
+              </div>
               <h3 className="service-title">{service.title}</h3>
               <p className="service-description">{service.description}</p>
             </article>

@@ -31,7 +31,6 @@ const Footer = () => {
               <li><Button className="footer-link-btn" onPress={() => document.getElementById("about")?.scrollIntoView({ behavior: "smooth", block: "start" })}>About</Button></li>
             </ul>
           </div>
-          <h1 className="mt-2">Hello</h1>
           <div className="footer-section">
             <h3 className="footer-title">Contact Us</h3>
             <div className="contact-info">

@@ -41,14 +41,14 @@ const PageHR = () => {
       {/* Main content - positioned at intersection of sidebar and header */}
       <main
         className={Cn(
-          "fixed transition-all duration-300 top-16 z-30 overflow-y-auto overflow-x-hidden p-6",
+          "fixed transition-all duration-300 top-16 z-30 overflow-y-auto  p-6",
           collapsed 
-            ? "md:left-[70px] md:w-[calc(100%-70px)] left-0 w-full" 
-            : "md:left-[250px] md:w-[calc(100%-250px)] left-0 w-full",
+            ? "md:left-[70px] md:w-[calc(100%-70px)] left-0" 
+            : "md:left-[250px] md:w-[calc(100%-250px)] left-0",
           "h-[calc(100vh-4rem)]"
         )}
       >
-        <Outlet />
+          <Outlet />
       </main>
     </div>
   );

@@ -11,7 +11,7 @@ import { navbarLink } from '../constants/index.jsx'
 export const Sidebar = forwardRef(({ collapsed }, ref) => {
     return (  
       <aside ref={ref} 
-      className={Cn("fixed top-0 bottom-0 z-[50] flex h-full w-[250px] flex-col overflow-x-hidden border-r border-slate-300 bg-white [transition:_width_300ms_cubic-bezier(0.4,0,0.2,1),left_300ms_cubic-bezier(0.4,0,0.2,1),background-color_150ms_cubic-bezier(0.4,0,0.2,1),border_150ms_cubic-bezier(0.4,0,0.2,1)] dark:border-slate-700 dark:bg-slate-900",
+      className={Cn("fixed top-0 bottom-0 z-[50] flex h-full w-[250px] flex-col overflow-x-hidden border-r border-slate-300 bg-white [transition:_width_300ms_cubic-bezier(0.4,0,0.2,1),left_300ms_cubic-bezier(0.4,0,0.2,1),background-color_150ms_cubic-bezier(0.4,0,0.2,1),border_150ms_cubic-bezier(0.4,0,0.2,1)] dark:border-slate-700 dark:bg-slate-800",
       collapsed ? "md:w-[70px] md:items-center" : "md:w-[250px]",
        collapsed ? "max-md:-left-full" :  "max-md:left-0",
       )} 
@@ -29,7 +29,7 @@ export const Sidebar = forwardRef(({ collapsed }, ref) => {
               )}
             </div>
 
-          <div style={{marginTop: ".9rem"}}  className='flex w-full flex-col gap-y-4 overflow-y-auto overflow-x-hidden p-3 [scrollbar-width:_thin]'>
+          <div style={{marginTop: "2rem"}}  className='flex w-full flex-col gap-y-4 overflow-y-auto overflow-x-hidden p-3 [scrollbar-width:_thin]'>
                  {navbarLink.map((navbarLink) => (
                         <nav 
                           key={navbarLink.title}

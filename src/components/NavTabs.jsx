@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Tabs, TabList, Tab, SelectionIndicator, Button } from "react-aria-components";
-import { Rocket, LogIn, ChevronDown } from "lucide-react";
+import { Rocket, LogIn } from "lucide-react";
 import { Link, useNavigate } from "react-router-dom";
 import "../styles/NavTabs.css";
 import logo from "../assets/Logo.png";
@@ -8,7 +8,6 @@ import logo from "../assets/Logo.png";
 const NavTabs = () => {
   const navigate = useNavigate();
   const [selectedTab, setSelectedTab] = useState("home");
-  const [showServicesDropdown, setShowServicesDropdown] = useState(false);
 
   const handleScroll = (id) => {
     setSelectedTab(id);
@@ -78,10 +77,8 @@ const NavTabs = () => {
               id="services"
               className="nav-tab"
               onPress={() => handleScroll("services")}
-              onMouseEnter={() => setShowServicesDropdown(true)}
-              onMouseLeave={() => setShowServicesDropdown(false)}
             >
-              <span>Services <ChevronDown size={16} className={`dropdown-arrow ${showServicesDropdown ? 'rotated' : ''}`} /></span>
+              <span>Services</span>
               <SelectionIndicator className="selection-indicator" />
             </Tab>
 
@@ -96,19 +93,8 @@ const NavTabs = () => {
           </TabList>
         </Tabs>
 
-        {showServicesDropdown && (
-          <div className="services-dropdown">
-            <div className="dropdown-item">Employee Information Management</div>
-            <div className="dropdown-item">Attendance & Timekeeping</div>
-            <div className="dropdown-item">Recruitment Management System</div>
-            <div className="dropdown-item">Leave Management</div>
-            <div className="dropdown-item">Payroll Processing</div>
-            <div className="dropdown-item">Reports and Analytics</div>
-          </div>
-        )}
-
         <div className="nav-action">
-          <Button className="get-started-btn" onPress={() => navigate('/login')}>
+          <Button className="get-started-btn" onPress={() => navigate('/register')}>
             Get Started
             <Rocket size={18} style={{ marginLeft: "0.5rem" }} />
           </Button>

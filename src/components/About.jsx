@@ -19,18 +19,24 @@ const About = () => {
           <div className="about-values" role="list">
             <div className="value-item" role="listitem">
               <Target size={32} className="value-icon" aria-hidden="true" />
-              <h3 className="value-title">Innovation</h3>
-              <p className="value-description">Cutting-edge technology for modern HR needs.</p>
+              <div className="value-content">
+                <h3 className="value-title">Innovation</h3>
+                <p className="value-description">Cutting-edge technology for modern HR needs.</p>
+              </div>
             </div>
             <div className="value-item" role="listitem">
               <Users size={32} className="value-icon" aria-hidden="true" />
-              <h3 className="value-title">People-Centric</h3>
-              <p className="value-description">Solutions designed with employees and managers in mind.</p>
+              <div className="value-content">
+                <h3 className="value-title">People-Centric</h3>
+                <p className="value-description">Solutions designed with employees and managers in mind.</p>
+              </div>
             </div>
             <div className="value-item" role="listitem">
               <Award size={32} className="value-icon" aria-hidden="true" />
-              <h3 className="value-title">Excellence</h3>
-              <p className="value-description">Committed to quality, security, and customer success.</p>
+              <div className="value-content">
+                <h3 className="value-title">Excellence</h3>
+                <p className="value-description">Committed to quality, security, and customer success.</p>
+              </div>
             </div>
           </div>
         </div>
