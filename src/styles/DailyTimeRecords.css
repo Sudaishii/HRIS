@@ -8,7 +8,7 @@
 .daily-time-records-container {
   max-width: 1280px;
   margin: 0 auto;
-  padding: 1.5rem;
+  padding: clamp(1rem, 3vw, 1.5rem);
 }
 
 .daily-time-records-header {
@@ -16,10 +16,12 @@
   align-items: center;
   justify-content: space-between;
   margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 1rem;
 }
 
 .daily-time-records-title {
-  font-size: 1.5rem;
+  font-size: clamp(1.25rem, 3vw, 1.5rem);
   font-weight: 700;
   color: #0f172a;
 }
@@ -127,6 +129,124 @@
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
+/* Date Filter Styles */
+.daily-time-records-date-filter {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.dark .daily-time-records-date-filter {
+  border-top-color: #334155;
+}
+
+.daily-time-records-date-filter-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #475569;
+}
+
+.dark .daily-time-records-date-filter-label {
+  color: #94a3b8;
+}
+
+.daily-time-records-date-filter-icon {
+  width: 1rem;
+  height: 1rem;
+  color: #64748b;
+}
+
+.dark .daily-time-records-date-filter-icon {
+  color: #94a3b8;
+}
+
+.daily-time-records-date-inputs {
+  display: flex;
+  align-items: flex-end;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.daily-time-records-date-input-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  flex: 1;
+  min-width: 150px;
+}
+
+.daily-time-records-date-label {
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.dark .daily-time-records-date-label {
+  color: #94a3b8;
+}
+
+.daily-time-records-date-input {
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  color: #0f172a;
+  background: white;
+  transition: all 0.2s;
+  width: 100%;
+}
+
+.dark .daily-time-records-date-input {
+  background: #334155;
+  border-color: #475569;
+  color: #f8fafc;
+}
+
+.daily-time-records-date-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.daily-time-records-date-clear-button {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.5rem 0.75rem;
+  background: #f1f5f9;
+  color: #64748b;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  height: fit-content;
+}
+
+.dark .daily-time-records-date-clear-button {
+  background: #334155;
+  border-color: #475569;
+  color: #94a3b8;
+}
+
+.daily-time-records-date-clear-button:hover {
+  background: #e2e8f0;
+  color: #334155;
+}
+
+.dark .daily-time-records-date-clear-button:hover {
+  background: #475569;
+  color: #cbd5e1;
+}
+
 /* Table Section */
 .daily-time-records-table-section {
   background: white;
@@ -147,6 +267,94 @@
   width: 100%;
   border-collapse: collapse;
   table-layout: fixed;
+  min-width: 900px;
+}
+
+@media (max-width: 1024px) {
+  .daily-time-records-table {
+    min-width: 800px;
+    font-size: 0.8125rem;
+  }
+  
+  .daily-time-records-table th,
+  .daily-time-records-table td {
+    padding: 0.625rem 0.75rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .daily-time-records-table {
+    min-width: 700px;
+    font-size: 0.75rem;
+  }
+  
+  .daily-time-records-table th,
+  .daily-time-records-table td {
+    padding: 0.5rem 0.625rem;
+  }
+  
+  .daily-time-records-table th:nth-child(1),
+  .daily-time-records-table td:nth-child(1) {
+    width: 20%;
+  }
+  
+  .daily-time-records-table th:nth-child(2),
+  .daily-time-records-table td:nth-child(2) {
+    width: 10%;
+  }
+  
+  .daily-time-records-table th:nth-child(3),
+  .daily-time-records-table th:nth-child(4),
+  .daily-time-records-table th:nth-child(5),
+  .daily-time-records-table td:nth-child(3),
+  .daily-time-records-table td:nth-child(4),
+  .daily-time-records-table td:nth-child(5) {
+    width: 12%;
+  }
+  
+  .daily-time-records-table th:nth-child(6),
+  .daily-time-records-table th:nth-child(7),
+  .daily-time-records-table th:nth-child(8),
+  .daily-time-records-table td:nth-child(6),
+  .daily-time-records-table td:nth-child(7),
+  .daily-time-records-table td:nth-child(8) {
+    width: 11%;
+  }
+  
+  .daily-time-records-search-section {
+    padding: 0.75rem;
+  }
+  
+  .daily-time-records-date-inputs {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .daily-time-records-date-input-wrapper {
+    min-width: 100%;
+  }
+  
+  .daily-time-records-date-clear-button {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .daily-time-records-container {
+    padding: 0.75rem;
+  }
+  
+  .daily-time-records-table th,
+  .daily-time-records-table td {
+    padding: 0.375rem 0.5rem;
+    font-size: 0.6875rem;
+  }
+  
+  .daily-time-records-import-button {
+    width: 100%;
+    justify-content: center;
+  }
 }
 
 .daily-time-records-table thead {
@@ -174,19 +382,23 @@
 }
 
 .daily-time-records-table th:nth-child(1) {
-  width: 20%;
+  width: 18%;
 }
 
-.daily-time-records-table th:nth-child(2),
+.daily-time-records-table th:nth-child(2) {
+  width: 10%;
+}
+
 .daily-time-records-table th:nth-child(3),
-.daily-time-records-table th:nth-child(4) {
-  width: 12%;
+.daily-time-records-table th:nth-child(4),
+.daily-time-records-table th:nth-child(5) {
+  width: 11%;
 }
 
-.daily-time-records-table th:nth-child(5),
 .daily-time-records-table th:nth-child(6),
-.daily-time-records-table th:nth-child(7) {
-  width: 12%;
+.daily-time-records-table th:nth-child(7),
+.daily-time-records-table th:nth-child(8) {
+  width: 10%;
 }
 
 .daily-time-records-table td {
@@ -308,6 +520,7 @@
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  margin: 0 clamp(16px, 4vw, 24px);
 }
 
 .dark .daily-time-records-dialog-content {
@@ -627,6 +840,12 @@
   grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
   gap: 1rem;
   margin-bottom: 1rem;
+}
+
+@media (max-width: 640px) {
+  .daily-time-records-summary-stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 
 .daily-time-records-summary-stat {

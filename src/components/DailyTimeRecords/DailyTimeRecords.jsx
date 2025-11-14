@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Search, Upload, X, FileText, CheckCircle2, AlertCircle, Loader2 } from "lucide-react";
+import { Search, Upload, X, FileText, CheckCircle2, AlertCircle, Loader2, Calendar } from "lucide-react";
 import * as Dialog from "@radix-ui/react-dialog";
 import { supabase } from "../../services/supabase-client";
 import Toast from "../Toast";
@@ -9,6 +9,8 @@ const DailyTimeRecords = () => {
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
   const [isImportDialogOpen, setIsImportDialogOpen] = useState(false);
   const [selectedFile, setSelectedFile] = useState(null);
   const [isDragging, setIsDragging] = useState(false);
@@ -98,22 +100,47 @@ const DailyTimeRecords = () => {
     };
   }, []);
 
-  // Filter records based on search query
+  // Filter records based on search query and date range
   const filteredRecords = records.filter((record) => {
-    if (!searchQuery.trim()) return true;
-
-    const query = searchQuery.toLowerCase().trim();
-    const employee = record.employee;
-    if (employee) {
-      const fullName = `${employee.emp_fname || ""} ${employee.emp_middle || ""} ${employee.emp_lname || ""}`.toLowerCase();
-      const employeeId = employee.emp_id?.toString() || "";
-      return (
-        fullName.includes(query) ||
-        employeeId.includes(query) ||
-        record.employee_id?.toString().includes(query)
-      );
+    // Filter by search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase().trim();
+      const employee = record.employee;
+      if (employee) {
+        const fullName = `${employee.emp_fname || ""} ${employee.emp_middle || ""} ${employee.emp_lname || ""}`.toLowerCase();
+        const employeeId = employee.emp_id?.toString() || "";
+        const matchesSearch = (
+          fullName.includes(query) ||
+          employeeId.includes(query) ||
+          record.employee_id?.toString().includes(query)
+        );
+        if (!matchesSearch) return false;
+      } else {
+        if (!record.employee_id?.toString().includes(query)) return false;
+      }
     }
-    return record.employee_id?.toString().includes(query);
+
+    // Filter by date range
+    if (startDate || endDate) {
+      if (!record.entry_date) return false;
+      
+      const recordDate = new Date(record.entry_date);
+      recordDate.setHours(0, 0, 0, 0);
+      
+      if (startDate) {
+        const start = new Date(startDate);
+        start.setHours(0, 0, 0, 0);
+        if (recordDate < start) return false;
+      }
+      
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        if (recordDate > end) return false;
+      }
+    }
+
+    return true;
   });
 
   // Convert month name to date (first day of month)
@@ -547,6 +574,56 @@ const DailyTimeRecords = () => {
               />
             </div>
           </div>
+          
+          {/* Date Filter Section */}
+          <div className="daily-time-records-date-filter">
+            <div className="daily-time-records-date-filter-label">
+              <Calendar className="daily-time-records-date-filter-icon" />
+              <span>Filter by Date Range:</span>
+            </div>
+            <div className="daily-time-records-date-inputs">
+              <div className="daily-time-records-date-input-wrapper">
+                <label htmlFor="start-date" className="daily-time-records-date-label">
+                  From:
+                </label>
+                <input
+                  type="date"
+                  id="start-date"
+                  value={startDate}
+                  onChange={(e) => setStartDate(e.target.value)}
+                  className="daily-time-records-date-input"
+                  max={endDate || undefined}
+                />
+              </div>
+              <div className="daily-time-records-date-input-wrapper">
+                <label htmlFor="end-date" className="daily-time-records-date-label">
+                  To:
+                </label>
+                <input
+                  type="date"
+                  id="end-date"
+                  value={endDate}
+                  onChange={(e) => setEndDate(e.target.value)}
+                  className="daily-time-records-date-input"
+                  min={startDate || undefined}
+                />
+              </div>
+              {(startDate || endDate) && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStartDate("");
+                    setEndDate("");
+                  }}
+                  className="daily-time-records-date-clear-button"
+                  title="Clear date filters"
+                >
+                  <X className="daily-time-records-icon" />
+                  Clear
+                </button>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Records Table */}
@@ -567,6 +644,7 @@ const DailyTimeRecords = () => {
                 <thead>
                   <tr>
                     <th>Employee</th>
+                    <th>Employee ID</th>
                     <th>Entry Date</th>
                     <th>Time In</th>
                     <th>Time Out</th>
@@ -581,6 +659,11 @@ const DailyTimeRecords = () => {
                       <td>
                         <div className="daily-time-records-cell-employee">
                           {getEmployeeName(record)}
+                        </div>
+                      </td>
+                      <td>
+                        <div className="daily-time-records-cell-text">
+                          {record.employee_id || "N/A"}
                         </div>
                       </td>
                       <td>

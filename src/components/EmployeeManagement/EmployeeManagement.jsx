@@ -16,8 +16,7 @@ const DEPARTMENTS = [
   "Front Desk Department",
   "Housekeeping Department",
   "Maintenance Department",
-  "Information Technology Department",
-  "Information IT dept" // Also include the database format
+  "Information Technology Department"
 ];
 
 // Position to Department mapping
@@ -343,7 +342,7 @@ const EmployeeManagement = () => {
       errors.emp_fname = "First name is required";
     } else if (formData.emp_fname.trim().length < 2) {
       errors.emp_fname = "First name must be at least 2 characters";
-    } else if (!/^[a-zA-Z\s'-]+$/.test(formData.emp_fname.trim())) {
+    } else if (!/^[\p{L}\s'-]+$/u.test(formData.emp_fname.trim())) {
       errors.emp_fname = "First name can only contain letters, spaces, hyphens, and apostrophes";
     }
 
@@ -352,12 +351,12 @@ const EmployeeManagement = () => {
       errors.emp_lname = "Last name is required";
     } else if (formData.emp_lname.trim().length < 2) {
       errors.emp_lname = "Last name must be at least 2 characters";
-    } else if (!/^[a-zA-Z\s'-]+$/.test(formData.emp_lname.trim())) {
+    } else if (!/^[\p{L}\s'-]+$/u.test(formData.emp_lname.trim())) {
       errors.emp_lname = "Last name can only contain letters, spaces, hyphens, and apostrophes";
     }
 
     // Middle name validation (optional)
-    if (formData.emp_middle && !/^[a-zA-Z\s'-]+$/.test(formData.emp_middle.trim())) {
+    if (formData.emp_middle && !/^[\p{L}\s'-]+$/u.test(formData.emp_middle.trim())) {
       errors.emp_middle = "Middle name can only contain letters, spaces, hyphens, and apostrophes";
     }
 

@@ -1,15 +1,50 @@
 import React, { useState, useEffect } from "react";
-import { Search, FileText, Loader2, X } from "lucide-react";
+import { Search, FileText, Loader2, X, CheckSquare, Square, Calendar, DollarSign } from "lucide-react";
 import { supabase } from "../../services/supabase-client";
 import Toast from "../Toast";
 import "../../styles/PayrollProcessing.css";
 
+const POSITION_LOOKUP = {
+  1: "General Manager",
+  2: "HR Manager",
+  3: "Finance Manager",
+  4: "Finance Clerk",
+  5: "Front Office Manager",
+  6: "Receptionist",
+  7: "Porter",
+  8: "Reservation Clerk",
+  9: "Executive Housekeeper",
+  10: "Housekeeping Supervisor",
+  11: "Room Attendant",
+  12: "Public Area Cleaner",
+  13: "Chief Engineer",
+  14: "Maintenance Supervisor",
+  15: "Maintenance Technician",
+  16: "Groundskeeper",
+  17: "IT Manager",
+  18: "IT Support Specialist",
+  19: "Network Administrator",
+  20: "System Administrator"
+};
+
 const PayrollProcessing = () => {
+  const [activeTab, setActiveTab] = useState("view"); // "view" or "generate"
   const [reports, setReports] = useState([]);
   const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedReport, setSelectedReport] = useState(null);
   const [toast, setToast] = useState({ show: false, message: "", type: "" });
+  
+  // Payslip generation states
+  const [employees, setEmployees] = useState([]);
+  const [selectedEmployees, setSelectedEmployees] = useState(new Set());
+  const [selectAll, setSelectAll] = useState(false);
+  const [month, setMonth] = useState("");
+  const [year, setYear] = useState("");
+  const [durationLabel, setDurationLabel] = useState("");
+  const [generating, setGenerating] = useState(false);
+  const [summary, setSummary] = useState("");
+  const [employeeSearchQuery, setEmployeeSearchQuery] = useState("");
 
   // Show toast notification
   const showToast = (message, type) => {
@@ -38,16 +73,18 @@ const PayrollProcessing = () => {
           ),
           payslip_status:payslip_status_id (
             pay_status_id,
-            status_name
+            status_name:pay_name
           )
         `)
-        .order("date", { ascending: false });
+        .order("year", { ascending: false })
+        .order("month", { ascending: false })
+        .order("created_at", { ascending: false });
 
       if (error) throw error;
       setReports(data || []);
     } catch (error) {
       console.error("Error fetching payslip reports:", error);
-      showToast("Failed to fetch payslip reports", "error");
+      // We intentionally skip showing a toast here so empty states don't look like failures
     } finally {
       setLoading(false);
     }
@@ -96,10 +133,16 @@ const PayrollProcessing = () => {
         employeeId.includes(query) ||
         email.includes(query) ||
         department.includes(query) ||
+        (report.month || "").toLowerCase().includes(query) ||
+        report.year?.toString().includes(query) ||
         report.report_id?.toString().includes(query)
       );
     }
-    return report.report_id?.toString().includes(query);
+    return (
+      report.report_id?.toString().includes(query) ||
+      (report.month || "").toLowerCase().includes(query) ||
+      report.year?.toString().includes(query)
+    );
   });
 
   // Format currency
@@ -110,6 +153,18 @@ const PayrollProcessing = () => {
       currency: "PHP",
       minimumFractionDigits: 2,
     }).format(amount);
+  };
+
+  const formatMonthLabel = (report) => {
+    if (!report) return "N/A";
+    const rawMonth = (report.month || "").toString().trim();
+    if (!rawMonth && report.year) return `${report.year}`;
+    if (!rawMonth) return "N/A";
+    const properMonth =
+      rawMonth.length > 1
+        ? rawMonth.charAt(0).toUpperCase() + rawMonth.slice(1).toLowerCase()
+        : rawMonth.toUpperCase();
+    return report.year ? `${properMonth} ${report.year}` : properMonth;
   };
 
   // Format date
@@ -151,6 +206,311 @@ const PayrollProcessing = () => {
     setSelectedReport(report);
   };
 
+  // Fetch employees for payslip generation
+  const fetchEmployees = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("employee")
+        .select(`
+          emp_id,
+          emp_fname,
+          emp_middle,
+          emp_lname,
+          emp_dept,
+          emp_position,
+          hourly_rate,
+          position_table:emp_position (
+            emp_position
+          )
+        `)
+        .order("emp_id", { ascending: true });
+
+      if (error) throw error;
+      setEmployees(data || []);
+    } catch (error) {
+      console.error("Error fetching employees:", error);
+      showToast("Failed to fetch employees", "error");
+    }
+  };
+
+  // Update duration label
+  const updateDurationLabel = (monthName, yearValue) => {
+    const monthNames = [
+      "January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December"
+    ];
+    const monthIndex = monthNames.findIndex(m => m.toLowerCase() === monthName.toLowerCase());
+    
+    if (monthIndex === -1) return;
+    
+    const year = parseInt(yearValue);
+    const firstDay = new Date(year, monthIndex, 1);
+    const lastDay = new Date(year, monthIndex + 1, 0);
+    
+    const formatDate = (date) => {
+      const day = date.getDate();
+      const month = date.toLocaleString("en-US", { month: "short" });
+      return `${day}-${month}-${year}`;
+    };
+    
+    setDurationLabel(`${formatDate(firstDay)} to ${formatDate(lastDay)}`);
+  };
+
+  // Handle month change
+  const handleMonthChange = (e) => {
+    const newMonth = e.target.value;
+    setMonth(newMonth);
+    if (year) {
+      updateDurationLabel(newMonth, year);
+    }
+  };
+
+  // Handle year change
+  const handleYearChange = (e) => {
+    const newYear = e.target.value;
+    setYear(newYear);
+    if (month) {
+      updateDurationLabel(month, newYear);
+    }
+  };
+
+  // Handle select all
+  const handleSelectAll = (checked) => {
+    setSelectAll(checked);
+    if (checked) {
+      const allIds = new Set(employees.map(emp => emp.emp_id));
+      setSelectedEmployees(allIds);
+    } else {
+      setSelectedEmployees(new Set());
+    }
+  };
+
+  // Handle individual employee selection
+  const handleEmployeeSelect = (empId, checked) => {
+    const newSelected = new Set(selectedEmployees);
+    if (checked) {
+      newSelected.add(empId);
+    } else {
+      newSelected.delete(empId);
+    }
+    setSelectedEmployees(newSelected);
+    setSelectAll(newSelected.size === employees.length);
+  };
+
+  // Convert time string to hours (HH:MM:SS or HH:MM to decimal)
+  const timeToHours = (timeString) => {
+    if (!timeString || timeString === "00:00:00" || timeString === "00:00") return 0;
+    const parts = timeString.split(":");
+    const hours = parseInt(parts[0]) || 0;
+    const minutes = parseInt(parts[1]) || 0;
+    return hours + (minutes / 60);
+  };
+
+  // Generate payslips
+  const handleGeneratePayslips = async () => {
+    if (selectedEmployees.size === 0) {
+      showToast("Please select at least one employee", "error");
+      return;
+    }
+
+    if (!month || !year) {
+      showToast("Please select month and year", "error");
+      return;
+    }
+
+    setGenerating(true);
+    setSummary("");
+
+    const SSS_RATE = 0.05; // 5%
+    const PHILHEALTH_RATE = 0.025; // 2.5%
+    const PAGIBIG_FIXED = 200; // ₱200
+    const DEFAULT_STATUS_ID = 1; // Pending
+
+    const monthNames = [
+      "January", "February", "March", "April", "May", "June",
+      "July", "August", "September", "October", "November", "December"
+    ];
+    const monthIndex = monthNames.findIndex(m => m.toLowerCase() === month.toLowerCase());
+    const selectedYear = parseInt(year);
+
+    let summaryText = "";
+    let generatedCount = 0;
+    let skippedCount = 0;
+    let errorCount = 0;
+    let duplicateFound = false;
+
+    try {
+      for (const empId of selectedEmployees) {
+        try {
+          // Check if report already exists
+          const { data: existingReport } = await supabase
+            .from("payslip_reports")
+            .select("report_id")
+            .eq("emp_id", empId)
+            .eq("month", month)
+            .eq("year", selectedYear)
+            .single();
+
+          if (existingReport) {
+            summaryText += `Skipped (already exists): Employee ID ${empId}\n`;
+            skippedCount++;
+            duplicateFound = true;
+            continue;
+          }
+
+          // Get employee hourly rate
+          const employee = employees.find(emp => emp.emp_id === empId);
+          if (!employee || !employee.hourly_rate) {
+            summaryText += `Error: Employee ID ${empId} - No hourly rate found\n`;
+            errorCount++;
+            continue;
+          }
+
+          const hourlyRate = parseFloat(employee.hourly_rate);
+
+          // Fetch DTR records for the month
+          const firstDay = new Date(selectedYear, monthIndex, 1);
+          const lastDay = new Date(selectedYear, monthIndex + 1, 0);
+          
+          const { data: dtrRecords, error: dtrError } = await supabase
+            .from("daily_time_record")
+            .select("hrs_worked, overtime_hrs")
+            .eq("employee_id", empId)
+            .gte("entry_date", firstDay.toISOString().split("T")[0])
+            .lte("entry_date", lastDay.toISOString().split("T")[0]);
+
+          if (dtrError) throw dtrError;
+
+          if (!dtrRecords || dtrRecords.length === 0) {
+            summaryText += `No DTR records found: Employee ID ${empId}\n`;
+            errorCount++;
+            continue;
+          }
+
+          // Calculate totals
+          let totalHours = 0;
+          let totalOvertime = 0;
+
+          dtrRecords.forEach(record => {
+            totalHours += timeToHours(record.hrs_worked);
+            totalOvertime += timeToHours(record.overtime_hrs);
+          });
+
+          // Calculate payroll
+          const grossSalary = totalHours * hourlyRate;
+          const overtimePay = totalOvertime * (hourlyRate * 1.5);
+          const contributionBase = grossSalary + overtimePay;
+          const sss = contributionBase * SSS_RATE;
+          const philhealth = contributionBase * PHILHEALTH_RATE;
+          const pagibig = PAGIBIG_FIXED;
+          const totalDeductions = sss + philhealth + pagibig;
+          const netPay = grossSalary + overtimePay - totalDeductions;
+
+          // Insert payslip report
+          const { error: insertError } = await supabase
+            .from("payslip_reports")
+            .insert({
+              emp_id: empId,
+              month: month,
+              year: selectedYear,
+              total_hours: totalHours,
+              total_overtime: totalOvertime,
+              gross_salary: grossSalary,
+              sss: sss,
+              phil_health: philhealth,
+              pag_ibig: pagibig,
+              t_deductions: totalDeductions,
+              overtime_pay: overtimePay,
+              net_pay: netPay,
+              payslip_status_id: DEFAULT_STATUS_ID,
+              date_generated: new Date().toISOString()
+            });
+
+          if (insertError) throw insertError;
+
+          summaryText += `Generated: Employee ID ${empId}, Month: ${month}, Year: ${selectedYear}, Net Pay: ₱${netPay.toFixed(2)}\n`;
+          generatedCount++;
+
+        } catch (error) {
+          console.error(`Error processing employee ${empId}:`, error);
+          summaryText += `Error: Employee ID ${empId} - ${error.message}\n`;
+          errorCount++;
+        }
+      }
+
+      setSummary(summaryText);
+      
+      if (generatedCount > 0) {
+        showToast(`Successfully generated ${generatedCount} payslip(s)`, "success");
+        fetchReports(); // Refresh reports list
+      }
+      
+      if (skippedCount > 0) {
+        showToast(`${skippedCount} payslip(s) already exist and were skipped`, "error");
+      }
+
+      if (duplicateFound && generatedCount === 0 && errorCount === 0) {
+        showToast("Selected employees already have payslips for this period.", "error");
+      }
+
+    } catch (error) {
+      console.error("Error generating payslips:", error);
+      showToast("Error occurred while generating payslips", "error");
+    } finally {
+      setGenerating(false);
+    }
+  };
+
+  const resolvePositionName = (emp) => {
+    if (!emp) return "N/A";
+    if (emp.position_table?.emp_position) {
+      return emp.position_table.emp_position;
+    }
+    const posId = emp.emp_position;
+    if (posId === null || posId === undefined) return "N/A";
+    const numericId = typeof posId === "string" ? parseInt(posId, 10) : posId;
+    return POSITION_LOOKUP[numericId] || "N/A";
+  };
+
+  // Initialize month and year
+  useEffect(() => {
+    const currentDate = new Date();
+    const currentMonth = currentDate.toLocaleString("en-US", { month: "long" });
+    const currentYear = currentDate.getFullYear();
+    
+    setMonth(currentMonth);
+    setYear(currentYear.toString());
+    updateDurationLabel(currentMonth, currentYear);
+    
+    if (activeTab === "generate") {
+      fetchEmployees();
+    }
+  }, [activeTab]);
+
+  // Filter employees for generation table
+  const filteredEmployees = employees.filter((emp) => {
+    if (!employeeSearchQuery.trim()) return true;
+    const query = employeeSearchQuery.toLowerCase().trim();
+    const fullName = `${emp.emp_fname || ""} ${emp.emp_middle || ""} ${emp.emp_lname || ""}`.toLowerCase();
+    return (
+      fullName.includes(query) ||
+      emp.emp_id?.toString().includes(query) ||
+      emp.emp_dept?.toLowerCase().includes(query) ||
+      resolvePositionName(emp).toLowerCase().includes(query)
+    );
+  });
+
+  const months = [
+    "January", "February", "March", "April", "May", "June",
+    "July", "August", "September", "October", "November", "December"
+  ];
+
+  const years = [];
+  const currentYear = new Date().getFullYear();
+  for (let i = currentYear; i >= currentYear - 10; i--) {
+    years.push(i.toString());
+  }
+
   return (
     <div className="payroll-processing">
       <div className="payroll-processing-container">
@@ -158,14 +518,35 @@ const PayrollProcessing = () => {
           <h1 className="payroll-processing-title">Payroll Processing</h1>
         </div>
 
-        {/* Search Section */}
-        <div className="payroll-processing-search-section">
+        {/* Tabs */}
+        <div className="payroll-processing-tabs">
+          <button
+            className={`payroll-processing-tab ${activeTab === "view" ? "active" : ""}`}
+            onClick={() => setActiveTab("view")}
+          >
+            <FileText className="payroll-processing-tab-icon" />
+            View Reports
+          </button>
+          <button
+            className={`payroll-processing-tab ${activeTab === "generate" ? "active" : ""}`}
+            onClick={() => setActiveTab("generate")}
+          >
+            <DollarSign className="payroll-processing-tab-icon" />
+            Generate Payslips
+          </button>
+        </div>
+
+        {/* View Reports Tab */}
+        {activeTab === "view" && (
+          <>
+            {/* Search Section */}
+            <div className="payroll-processing-search-section">
           <div className="payroll-processing-search-wrapper">
             <div className="payroll-processing-search-input-wrapper">
               <Search className="payroll-processing-search-icon" />
               <input
                 type="text"
-                placeholder="Search by employee name, ID, email, or department..."
+                placeholder="Search by employee name, ID, month, email, or department..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="payroll-processing-search-input"
@@ -191,13 +572,23 @@ const PayrollProcessing = () => {
             ) : (
               <div className="payroll-processing-table-wrapper">
                 <table className="payroll-processing-table">
+                  <colgroup>
+                    <col className="col-employee" />
+                    <col className="col-id" />
+                    <col className="col-period" />
+                    <col className="col-money" />
+                    <col className="col-money" />
+                    <col className="col-money" />
+                    <col className="col-status" />
+                  </colgroup>
                   <thead>
                     <tr>
                       <th>Employee</th>
-                      <th>Date</th>
-                      <th>Gross Salary</th>
-                      <th>Deductions</th>
-                      <th>Net Pay</th>
+                      <th>Employee ID</th>
+                      <th>Period</th>
+                      <th className="numeric-column">Gross Salary</th>
+                      <th className="numeric-column">Deductions</th>
+                      <th className="numeric-column">Net Pay</th>
                       <th>Status</th>
                     </tr>
                   </thead>
@@ -208,32 +599,37 @@ const PayrollProcessing = () => {
                         className={selectedReport?.report_id === report.report_id ? "payroll-processing-row-selected" : ""}
                         onClick={() => handleRowClick(report)}
                       >
-                        <td>
+                        <td className="col-employee">
                           <div className="payroll-processing-cell-employee">
                             {getEmployeeName(report)}
                           </div>
                         </td>
-                        <td>
+                        <td className="col-id">
                           <div className="payroll-processing-cell-text">
-                            {formatDate(report.date)}
+                            {report.employee?.emp_id || report.emp_id}
                           </div>
                         </td>
-                        <td>
+                        <td className="col-period">
+                          <div className="payroll-processing-cell-text">
+                            {formatMonthLabel(report)}
+                          </div>
+                        </td>
+                        <td className="numeric-column">
                           <div className="payroll-processing-cell-amount">
                             {formatCurrency(report.gross_salary)}
                           </div>
                         </td>
-                        <td>
+                        <td className="numeric-column">
                           <div className="payroll-processing-cell-amount">
                             {formatCurrency(report.t_deductions)}
                           </div>
                         </td>
-                        <td>
+                        <td className="numeric-column">
                           <div className="payroll-processing-cell-amount payroll-processing-cell-net">
                             {formatCurrency(report.net_pay)}
                           </div>
                         </td>
-                        <td>
+                        <td className="col-status">
                           <span className={`payroll-processing-status-badge ${getStatusBadgeClass(report.payslip_status?.status_name)}`}>
                             {report.payslip_status?.status_name || "Unknown"}
                           </span>
@@ -303,9 +699,9 @@ const PayrollProcessing = () => {
                     <h3 className="payroll-processing-summary-section-title">Pay Period</h3>
                     <div className="payroll-processing-summary-grid">
                       <div className="payroll-processing-summary-item">
-                        <span className="payroll-processing-summary-label">Date:</span>
+                        <span className="payroll-processing-summary-label">Period:</span>
                         <span className="payroll-processing-summary-value">
-                          {formatDate(selectedReport.date)}
+                          {formatMonthLabel(selectedReport)}
                         </span>
                       </div>
                       <div className="payroll-processing-summary-item">
@@ -413,6 +809,161 @@ const PayrollProcessing = () => {
             )}
           </div>
         </div>
+          </>
+        )}
+
+        {/* Generate Payslips Tab */}
+        {activeTab === "generate" && (
+          <div className="payroll-processing-generate">
+            {/* Month/Year Selection */}
+            <div className="payroll-processing-generate-controls">
+              <div className="payroll-processing-generate-control-group">
+                <label className="payroll-processing-generate-label">
+                  <Calendar className="payroll-processing-generate-icon" />
+                  Month:
+                </label>
+                <select
+                  value={month}
+                  onChange={handleMonthChange}
+                  className="payroll-processing-generate-select"
+                >
+                  {months.map((m) => (
+                    <option key={m} value={m}>
+                      {m}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              <div className="payroll-processing-generate-control-group">
+                <label className="payroll-processing-generate-label">
+                  <Calendar className="payroll-processing-generate-icon" />
+                  Year:
+                </label>
+                <select
+                  value={year}
+                  onChange={handleYearChange}
+                  className="payroll-processing-generate-select"
+                >
+                  {years.map((y) => (
+                    <option key={y} value={y}>
+                      {y}
+                    </option>
+                  ))}
+                </select>
+              </div>
+              {durationLabel && (
+                <div className="payroll-processing-duration-label">
+                  <span>Duration: {durationLabel}</span>
+                </div>
+              )}
+            </div>
+
+            {/* Search Section */}
+            <div className="payroll-processing-search-section">
+              <div className="payroll-processing-search-wrapper">
+                <div className="payroll-processing-search-input-wrapper">
+                  <Search className="payroll-processing-search-icon" />
+                  <input
+                    type="text"
+                    placeholder="Search employees by name, ID, department, or position..."
+                    value={employeeSearchQuery}
+                    onChange={(e) => setEmployeeSearchQuery(e.target.value)}
+                    className="payroll-processing-search-input"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Employee Table */}
+            <div className="payroll-processing-generate-table-section">
+              <div className="payroll-processing-generate-table-header">
+                <label className="payroll-processing-generate-select-all">
+                  <input
+                    type="checkbox"
+                    checked={selectAll}
+                    onChange={(e) => handleSelectAll(e.target.checked)}
+                  />
+                  <span>Select All</span>
+                </label>
+                <button
+                  className="payroll-processing-generate-button"
+                  onClick={handleGeneratePayslips}
+                  disabled={generating || selectedEmployees.size === 0}
+                >
+                  {generating ? (
+                    <>
+                      <Loader2 className="payroll-processing-icon spinning" />
+                      Generating...
+                    </>
+                  ) : (
+                    <>
+                      <DollarSign className="payroll-processing-icon" />
+                      Generate Payslips
+                    </>
+                  )}
+                </button>
+              </div>
+
+              <div className="payroll-processing-generate-table-wrapper">
+                <table className="payroll-processing-generate-table">
+                  <thead>
+                    <tr>
+                      <th style={{ width: "50px" }}>Select</th>
+                      <th>Employee ID</th>
+                      <th>Name</th>
+                      <th>Department</th>
+                      <th>Position</th>
+                      <th>Hourly Rate</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredEmployees.length === 0 ? (
+                      <tr>
+                        <td colSpan="6" className="payroll-processing-generate-empty">
+                          No employees found
+                        </td>
+                      </tr>
+                    ) : (
+                      filteredEmployees.map((emp) => {
+                        const isSelected = selectedEmployees.has(emp.emp_id);
+                        const fullName = `${emp.emp_fname || ""} ${emp.emp_middle || ""} ${emp.emp_lname || ""}`.trim();
+                        return (
+                          <tr key={emp.emp_id}>
+                            <td>
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                onChange={(e) => handleEmployeeSelect(emp.emp_id, e.target.checked)}
+                              />
+                            </td>
+                            <td>{emp.emp_id}</td>
+                            <td>{fullName || "N/A"}</td>
+                            <td>{emp.emp_dept || "N/A"}</td>
+                            <td>{resolvePositionName(emp)}</td>
+                            <td>{formatCurrency(emp.hourly_rate || 0)}</td>
+                          </tr>
+                        );
+                      })
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Summary Area */}
+            {summary && (
+              <div className="payroll-processing-generate-summary">
+                <h3 className="payroll-processing-generate-summary-title">Generation Summary</h3>
+                <textarea
+                  readOnly
+                  value={summary}
+                  className="payroll-processing-generate-summary-textarea"
+                  rows={10}
+                />
+              </div>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Toast Notification */}

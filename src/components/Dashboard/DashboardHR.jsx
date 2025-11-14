@@ -12,40 +12,37 @@ export const DashboardHR = () => {
   ];
 
   const containerStyle = {
-    position: "absolute",
-    top: "55%",
-    left: "50%",
-    transform: "translate(-50%, -50%)",
+    position: "relative",
     width: "100%",
     maxWidth: "720px",
-    margin: "0 auto",
+    margin: "40px auto 24px",
+    padding: "clamp(16px, 4vw, 24px)",
     backgroundColor: "#1f1f2b",
     color: "#f5f5f5",
     borderRadius: "8px",
-    padding: "24px",
     fontFamily: "system-ui, sans-serif",
   };
 
 const cardWrapper = {
-
- 
-
   display: "grid",
   marginTop: "40px",
-  gridTemplateColumns: "repeat(auto-fit, minmax(260px, 1fr))",
-  gap: "20px",
+  gridTemplateColumns: "repeat(auto-fit, minmax(min(260px, 100%), 1fr))",
+  gap: "clamp(16px, 3vw, 20px)",
   marginBottom: "24px",
-  width: "1300px",
+  width: "100%",
+  maxWidth: "1300px",
   marginLeft: "auto",
   marginRight: "auto",
+  padding: "0 clamp(16px, 4vw, 24px)",
 };
 
 // 👇 Bigger card style
 const cardStyle = {
   backgroundColor: "#2b2b3b",
   borderRadius: "12px",
-  padding: "36px 30px",
-  height: "160px",
+  padding: "clamp(20px, 4vw, 36px) clamp(16px, 3vw, 30px)",
+  minHeight: "160px",
+  height: "auto",
   display: "flex",
   flexDirection: "column",
   justifyContent: "center",
@@ -58,8 +55,10 @@ const cardStyle = {
 
   const inputRow = {
     display: "flex",
+    flexDirection: "row",
     gap: "8px",
     marginBottom: "20px",
+    flexWrap: "wrap",
   };
 
   const inputStyle = {
@@ -89,8 +88,10 @@ const cardStyle = {
     alignItems: "center",
     backgroundColor: "#2b2b3b",
     borderRadius: "6px",
-    padding: "8px 12px",
+    padding: "clamp(8px, 2vw, 12px)",
     marginBottom: "10px",
+    flexWrap: "wrap",
+    gap: "8px",
   };
 
   const memberInfo = {
@@ -111,14 +112,16 @@ const cardStyle = {
   const nameStyle = {
     color: "#60a5fa",
     fontWeight: 500,
-    fontSize: "14px",
+    fontSize: "clamp(12px, 1.8vw, 14px)",
     marginBottom: "2px",
     cursor: "pointer",
+    wordBreak: "break-word",
   };
 
   const emailStyle = {
     color: "#aaa",
-    fontSize: "13px",
+    fontSize: "clamp(11px, 1.6vw, 13px)",
+    wordBreak: "break-word",
   };
 
   const moreButton = {
@@ -142,8 +145,8 @@ const cardStyle = {
 
       {/* Employees Section */}
       <div style={containerStyle}>
-        <h2 style={{ fontSize: "18px", fontWeight: 600, marginBottom: "4px" }}>Employees</h2>
-        <p style={{ fontSize: "13px", color: "#aaa", marginBottom: "16px" }}>
+        <h2 style={{ fontSize: "clamp(16px, 2.5vw, 18px)", fontWeight: 600, marginBottom: "4px" }}>Employees</h2>
+        <p style={{ fontSize: "clamp(12px, 1.8vw, 13px)", color: "#aaa", marginBottom: "16px" }}>
           Invite new employees to the company.
         </p>
 
